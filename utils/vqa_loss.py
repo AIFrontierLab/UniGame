@@ -22,8 +22,7 @@ class VQALoss(nn.Module):
     def forward(self, logits: torch.Tensor, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         B, V = logits.shape
         y = batch["answers"]  
-        assert y.shape == (B, V) and y.dtype.is_floating_point, \
-            f"answers 应是 [B,{V}] 的 float 张量，收到 {y.shape} {y.dtype}"
+        assert y.shape == (B, V) and y.dtype.is_floating_point
 
         with torch.autocast('cuda', enabled=False):
             logits_fp32 = logits.float()
@@ -46,3 +45,4 @@ class VQALoss(nn.Module):
 
         total = self.answer_weight * ce + self.alignment_weight * align
         return {"ce_loss": ce, "alignment_loss": align, "total_loss": total}
+
