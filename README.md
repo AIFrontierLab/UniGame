@@ -1,8 +1,10 @@
 # UniGame: Turning a Unified Multimodal Model Into Its Own Adversary
 
 Official implementation of **UniGame**, a self-adversarial post-training framework for Unified Multimodal Models (UMMs).
-| ![Image1](./fig/consistency.jpg) | ![Image2](./fig/fig-manifold.jpg) |
-|:---:|:---:|
+<p align="center">
+  <img src="./fig/consistency.jpg" width="50%">
+  <img src="./fig/fig-manifold.jpg" width="30%">
+</p>
 ## Overview
 UniGame is the first self-adversarial post-training framework that improves the consistency between understanding and generation pathways in Unified Multimodal Models. By treating the generation pathway as an active adversary, UniGame enables the model to discover and correct its own inconsistencies.
  ![Image1](./fig/fig-framework.jpg)
