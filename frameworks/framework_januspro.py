@@ -15,13 +15,11 @@ import math
 import random
 import numpy as np
 
-
 def _pad_to_len(x: torch.Tensor, L: int, pad_val: int = 0) -> torch.Tensor:
     if x.dim() == 1:
         return F.pad(x, (0, L - x.shape[0]), value=pad_val)
     else:
         return F.pad(x, (0, 0, 0, L - x.shape[0]))
-
 
 def _pack_prompt_and_labels(
     tokenizer,
@@ -47,7 +45,6 @@ def _pack_prompt_and_labels(
     attn_mask = torch.stack([_pad_to_len(x, T, pad_val=0) for x in attn_mask])
     labels = torch.stack([_pad_to_len(x, T, pad_val=-100) for x in labels])
     return input_ids, attn_mask, labels
-
 
 def _insert_image_features(
     text_embeds: torch.Tensor,
@@ -76,7 +73,6 @@ def _insert_image_features(
         dim=0,
     )
     return e_new, m_new, l_new
-
 
 class PerturbNet(nn.Module):
     def __init__(
@@ -120,7 +116,6 @@ class PerturbNet(nn.Module):
         delta32 = eps * r
         return delta32.to(x.dtype)
 
-
 def _guess_lora_targets(lm: nn.Module) -> List[str]:
     cands = {
         "q_proj",
@@ -142,7 +137,6 @@ def _guess_lora_targets(lm: nn.Module) -> List[str]:
                 found.add("W_pack")
                 break
     return sorted(found) if found else ["q_proj", "v_proj"]
-
 
 class JanusProAdvFramework(nn.Module):
     def __init__(
