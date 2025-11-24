@@ -2,7 +2,7 @@
 
 Official implementation of **UniGame**, a self-adversarial post-training framework for Unified Multimodal Models (UMMs).
 <p align="center">
-  <img src="./fig/consistency.jpg" width="50%">
+  <img src="./fig/consistency.jpg" width="30%">
   <img src="./fig/fig-manifold.jpg" width="30%">
 </p>
 ## Overview
