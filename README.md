@@ -12,19 +12,14 @@
 
   <a href="https://jd92.wang/" target="_blank">
     <img alt="Lab Homepage" src="https://img.shields.io/badge/Lab-AIFrontier-blue?color=3273dc" />
-  </a>
   <a href="https://rollingsu.github.io/" target="_blank">
     <img alt="Zhaolong Su" src="https://img.shields.io/badge/Zhaolong-Su-orange?color=f5a623" />
-  </a>
   <a href="https://arxiv.org/abs/2511.19413" target="_blank">
     <img alt="Paper" src="https://img.shields.io/badge/Paper-arXiv-red?logo=arxiv&color=b31b1b" />
-  </a>
   <a href="https://github.com/AIFrontierLab/UniGame" target="_blank">
     <img alt="GitHub" src="https://img.shields.io/badge/GitHub-UniGame-black?logo=github" />
-  </a>
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/badge/License-MIT-f5de53?&color=f5de53">
-  </a>
 
 </div>
 
@@ -121,7 +116,7 @@ If you find this work useful, please cite:
 ```
 ## Acknowledgements
 
-We thank the authors of [Janus-Pro](https://github.com/deepseek-ai/Janus), [VQAv2](https://visualqa.org/), and other open-source projects that made this work possible.
+We thank Dr. Ziyue Xu from NVIDIA for his insightful discussions and valuable comments on this project. We thank the authors of [Janus-Pro](https://github.com/deepseek-ai/Janus), [VQAv2](https://visualqa.org/), and other open-source projects that made this work possible.
 
 ## License
 
