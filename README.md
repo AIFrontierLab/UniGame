@@ -113,7 +113,7 @@ If you find this work useful, please cite:
   year={2025},
   url={https://api.semanticscholar.org/CorpusID:283244819}
 }
-
+'''
 ## Acknowledgements
 
 We thank the authors of [Janus-Pro](https://github.com/deepseek-ai/Janus), [VQAv2](https://visualqa.org/), and other open-source projects that made this work possible.
