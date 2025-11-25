@@ -107,14 +107,14 @@ srun --gres=gpu:4 --cpus-per-task=16 torchrun --nproc_per_node=4 main.py
 
 If you find this work useful, please cite:
 
-'''
+```bibtex
 @inproceedings{Su2025UniGameTA,
   title={UniGame: Turning a Unified Multimodal Model Into Its Own Adversary},
   author={Zhaolong Su and Wang Lu and Hao Chen and Sharon Li and Jindong Wang},
   year={2025},
   url={https://api.semanticscholar.org/CorpusID:283244819}
 }
-'''
+```
 ## Acknowledgements
 
 We thank the authors of [Janus-Pro](https://github.com/deepseek-ai/Janus), [VQAv2](https://visualqa.org/), and other open-source projects that made this work possible.
