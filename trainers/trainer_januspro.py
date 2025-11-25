@@ -224,7 +224,8 @@ class AdvTrainer:
         self.step = 0
         self.loss_history = defaultdict(list)
         self._loss_buf = defaultdict(lambda: {"sum": 0.0, "n": 0})
-        for k in ["gen_ce_adv_ma", "disc_ce_decoded_ma", "disc_ce_clean_ma", "disc_ce_hard_ma"]:
+
+        for k in ["gen_ce_adv_ma", "disc_ce_clean_ma", "disc_ce_hard_ma"]:
             self._loss_buf[k] = {"sum": 0.0, "n": 0}
             self.loss_history[k] = []
 
@@ -238,10 +239,8 @@ class AdvTrainer:
 
         self.gen_lambda = float(config.get("gen_lambda", 120.0))
 
-        self.use_decoded_dpass  = bool(config.get("use_decoded_dpass", True))
         self.use_clean_dpass    = bool(config.get("use_clean_dpass", True))
-        self.d_decoded_weight   = float(config.get("d_decoded_weight", 1.0))
-        self.d_clean_weight     = float(config.get("d_clean_weight",   0.5))
+        self.d_clean_weight     = float(config.get("d_clean_weight", 1.0)) 
 
         self.clip_tau    = float(config.get("clip_tau", 0.30))
         self.clip_lambda = float(config.get("clip_lambda", 0.2))
@@ -251,7 +250,7 @@ class AdvTrainer:
         self.buffer_temp = float(config.get("buffer_temp", 2.0))
         self.hard_bs     = int(config.get("hard_bs", 8))
         self.decoded_micro_bs = int(config.get("decoded_micro_bs", 2))
-        self.hard_push_max_per_step = int(config.get("hard_push_max_per_step", 0))  # 0=不限制
+        self.hard_push_max_per_step = int(config.get("hard_push_max_per_step", 0))
         self.mine_stride = int(config.get("mine_stride", 1))       
 
         self.hard_buf = HardBuffer(self.buffer_size)
@@ -368,7 +367,6 @@ class AdvTrainer:
             y_text += 20
 
         return canvas
-
         
     @torch.no_grad()
     def _save_hard_visuals(
@@ -448,17 +446,6 @@ class AdvTrainer:
         grid.save(out_path, quality=92)
 
 
-    def _wrap(text, maxw):
-            lines, cur = [], ""
-            for ch in text:
-                w,_ = draw.textsize(cur + ch, font=font)
-                if w > maxw:
-                    lines.append(cur); cur = ch
-                else:
-                    cur += ch
-            if cur: lines.append(cur)
-            return lines
-
     def _hard_threshold(self, H: torch.Tensor) -> float:
         if self.hard_thresh_mode == "absolute":
             return float(self.hard_thresh_value)
@@ -506,7 +493,7 @@ class AdvTrainer:
     def _mine_and_buffer(self, batch: Dict):
         imgs_batch = batch["image"]
         assert torch.is_tensor(imgs_batch) and imgs_batch.dim() == 4 and imgs_batch.size(1) == 3, \
-            "Expect batch['image'] as Tensor[B,3,H,W] (把预处理放进Dataset+collate后，这里永远为Tensor)"
+            "Expect batch['image'] as Tensor[B,3,H,W]"
 
         qs  = batch["question"]
         ans = batch["answer_text"]
@@ -520,15 +507,14 @@ class AdvTrainer:
         for i in range(B):
             for k in range(self.cand_K):
                 prompts.append(qs[i])
-                cand_meta.append((i, k))  
-        # [N,3,h,w] in [0,1]
+                cand_meta.append((i, k))
+        
         cand_imgs = self.base._official_generate_batch(
             prompts, inject_adv=True,
             seed=114514 + self.step * 97,
             img_size=self.base.img_gen_size,
             patch_size=self.base.img_patch_size,
             cfg_weight=self.base.cfg_weight,
-            # temperature=self.base.gen_temperature,
         )
 
         if cand_imgs.shape[-2:] != (Ht, Wt):
@@ -539,7 +525,8 @@ class AdvTrainer:
         cand_qs = [qs[i]  for (i, _) in cand_meta]
         cand_as = [ans[i] for (i, _) in cand_meta]
         N = cand_imgs.size(0)
-       s_clip = self.clip.score(cand_imgs, cand_qs, micro_bs=self.decoded_micro_bs)  # [N], cosine 相似度
+        
+        s_clip = self.clip.score(cand_imgs, cand_qs, micro_bs=self.decoded_micro_bs)
 
         ce_vals = []
         mb = max(1, self.decoded_micro_bs)
@@ -552,7 +539,7 @@ class AdvTrainer:
 
         clip_hinge = torch.clamp(self.clip_tau - s_clip, min=0.0)
         H = ce_vals + self.clip_lambda * clip_hinge
-        th = (self._hard_threshold(H))
+        th = self._hard_threshold(H)
         mask = (H >= th) | (s_clip <= self.clip_tau)
         chosen_idx = torch.nonzero(mask, as_tuple=False).view(-1).tolist()
 
@@ -571,7 +558,7 @@ class AdvTrainer:
 
         if save_visual and picked_final:
             viz_ids = picked_final[: self.hard_save_max_step]
-            viz_imgs = cand_imgs[viz_ids]  # Tensor[Nv,3,H,W]
+            viz_imgs = cand_imgs[viz_ids]
             viz_qs   = [cand_qs[j] for j in viz_ids]
             preds = self.base.infer_answers_batch(
                 images=viz_imgs,
@@ -599,6 +586,7 @@ class AdvTrainer:
                 "answer_text": cand_as[j],
                 "H": H_j,
             })
+            
             img_path = ""
             if save_visual and self.rank == 0 and (saved_cnt < self.hard_save_max_step):
                 try:
@@ -662,7 +650,6 @@ class AdvTrainer:
         plt.legend(); plt.tight_layout()
         plt.savefig(os.path.join(self.vis_dir, "eps_curve.png")); plt.close()
 
-
     @staticmethod
     def _ema(values, beta=0.6):
         out, m = [], None
@@ -720,7 +707,6 @@ class AdvTrainer:
         plt.figure(figsize=(6.6, 6.6))
         ax = plt.gca()
 
-        # D-path
         if have_D:
             ax.plot(D[:, 0], D[:, 1],
                     lw=2.0, color=self._palette["disc_path"], alpha=0.9, label="D-path")
@@ -767,19 +753,19 @@ class AdvTrainer:
     @torch.no_grad()
     def _plot_losses(self):
         if self.rank != 0: return
-        keys = ["gen_ce_adv_ma", "disc_ce_decoded_ma", "disc_ce_clean_ma", "disc_ce_hard_ma"]
+        keys = ["gen_ce_adv_ma", "disc_ce_clean_ma", "disc_ce_hard_ma"]
         if not any(self.loss_history.get(k) for k in keys): return
 
         plt.figure(figsize=(11.5, 5.0))
         if self.loss_history.get("gen_ce_adv_ma"):
             x = (np.arange(len(self.loss_history["gen_ce_adv_ma"])) + 1) * self.log_stride
             plt.plot(x, self.loss_history["gen_ce_adv_ma"], lw=1.8, label="G: CE(adv) (↑)", color=self._palette["loss_4"])
-        if self.loss_history.get("disc_ce_decoded_ma"):
-            x = (np.arange(len(self.loss_history["disc_ce_decoded_ma"])) + 1) * self.log_stride
-            plt.plot(x, self.loss_history["disc_ce_decoded_ma"], lw=1.8, label="D: CE(hard) (↓)", color=self._palette["loss_1"])
+        if self.loss_history.get("disc_ce_clean_ma"):
+            x = (np.arange(len(self.loss_history["disc_ce_clean_ma"])) + 1) * self.log_stride
+            plt.plot(x, self.loss_history["disc_ce_clean_ma"], lw=1.8, label="D: CE(clean) (↓)", color=self._palette["loss_1"])
         if self.loss_history.get("disc_ce_hard_ma"):
             x = (np.arange(len(self.loss_history["disc_ce_hard_ma"])) + 1) * self.log_stride
-            plt.plot(x, self.loss_history["disc_ce_hard_ma"], lw=1.8, label="D: CE(adv) (↓)", color=self._palette["loss_3"])
+            plt.plot(x, self.loss_history["disc_ce_hard_ma"], lw=1.8, label="D: CE(buffer) (↓)", color=self._palette["loss_3"])
 
         plt.xlabel("Global step"); plt.ylabel("Loss / CE")
         plt.title("G vs D")
@@ -816,6 +802,7 @@ class AdvTrainer:
                 self.scaler.unscale_(self.gen_opt)
                 if self.gen_clip > 0:
                     torch.nn.utils.clip_grad_norm_(self._gen_params, self.gen_clip)
+                
                 g_logeps = getattr(self.base.perturb, "log_eps", None)
                 grad_norm = (0.0 if (g_logeps is None or g_logeps.grad is None)
                              else float(g_logeps.grad.detach().abs().mean().item()))
@@ -861,49 +848,6 @@ class AdvTrainer:
                 deltaJ_D_this = 0.0
                 dxD_acc, dyD_acc = 0.0, 0.0
 
-                if self.use_decoded_dpass:
-                    with torch.no_grad():
-                        adv_only_imgs = self.base._make_decoded_images(batch, mode="adv_only")
-
-                    if (self.rank == 0) and ((self.step == 0) or ((self.step + 1) % max(1, int(self.cfg.get("save_decoded_every", 10))) == 0)):
-                        self.base._save_decoded_samples(batch["image"], adv_only_imgs, tag=f"step_{self.step+1:07d}")
-
-                    self.disc_opt.zero_grad(set_to_none=True)
-                    self.gen_opt.zero_grad(set_to_none=True)
-                    for p in self._gen_params:  p.requires_grad = False
-                    for p in self._disc_params: p.requires_grad = True
-
-                    noisy_batch = dict(batch)
-                    noisy_batch["image"] = adv_only_imgs
-
-                    with torch.amp.autocast('cuda', enabled=self.use_amp):
-                        self.base._adv_flag = False
-                        loss_decoded, _ = self.model(noisy_batch)
-                        self.base._adv_flag = False
-                        disc_loss_decoded = self.d_decoded_weight * loss_decoded
-
-                    old_disc_params_dec = [p.data.detach().clone().float() for p in self._disc_params]
-                    self.scaler.scale(disc_loss_decoded).backward()
-                    self.scaler.unscale_(self.disc_opt)
-                    if self.disc_clip > 0:
-                        torch.nn.utils.clip_grad_norm_(self._disc_params, self.disc_clip)
-                    disc_grads_before_dec = [p.grad.detach().float().clone() if p.grad is not None else None for p in self._disc_params]
-                    self.scaler.step(self.disc_opt); self.scaler.update()
-
-                    dx_dec, dy_dec = self._project_delta_shared("D", old_disc_params_dec)
-                    dxD_acc += dx_dec; dyD_acc += dy_dec
-
-                    delta_dec = 0.0
-                    for p, g, old in zip(self._disc_params, disc_grads_before_dec, old_disc_params_dec):
-                        if g is None: continue
-                        d = (p.data.detach().float() - old)
-                        delta_dec += float((g * d).sum().item())
-                    deltaJ_D_this += delta_dec
-
-                    disc_ce_this += float(loss_decoded.detach())
-                    self._loss_buf["disc_ce_decoded_ma"]["sum"] += float(loss_decoded.detach())
-                    self._loss_buf["disc_ce_decoded_ma"]["n"]   += 1
-
                 if self.use_clean_dpass:
                     self.disc_opt.zero_grad(set_to_none=True)
                     self.gen_opt.zero_grad(set_to_none=True)
@@ -937,11 +881,10 @@ class AdvTrainer:
                     disc_ce_this += float(loss_clean.detach())
                     self._loss_buf["disc_ce_clean_ma"]["sum"] += float(loss_clean.detach())
                     self._loss_buf["disc_ce_clean_ma"]["n"]   += 1
-
+                    
                 hard_items = self.hard_buf.sample(n=self.hard_bs, temperature=self.buffer_temp, pop=True)
 
                 if hard_items:
-        
                     if torch.is_tensor(batch["image"]):
                         Ht, Wt = batch["image"].shape[-2], batch["image"].shape[-1]
                     else:
@@ -1009,10 +952,12 @@ class AdvTrainer:
                 if eps_val is not None:
                     self.eps_history.append((self.step + 1, eps_val))
 
-                d_pass_cnt = max(1, int(self.use_decoded_dpass) + int(self.use_clean_dpass)) + (1 if self.hard_bs > 0 else 0)
+                d_pass_cnt = int(self.use_clean_dpass) + (1 if hard_items else 0)
+                d_pass_cnt = max(1, d_pass_cnt)
+                
                 self._loss_buf["gen_ce_adv_ma"]["sum"] += float(gen_ce_this)
                 self._loss_buf["gen_ce_adv_ma"]["n"]   += 1
-                self._loss_buf["disc_ce_ma"]["sum"]    += (disc_ce_this / max(1, d_pass_cnt))
+                self._loss_buf["disc_ce_ma"]["sum"]    += (disc_ce_this / d_pass_cnt)
                 self._loss_buf["disc_ce_ma"]["n"]      += 1
 
                 self._deltaJ_steps.append(self.step + 1)
@@ -1029,13 +974,14 @@ class AdvTrainer:
                     self._plot_eps_curve()
                     self._plot_game_geometry()
                     self._plot_losses()
+                    
                 if (self.step + 1) % self._path_stride == 0:
                     self._append_path("D", dxD_acc, dyD_acc)
 
                 self.step += 1
                 if self.rank == 0 and pbar:
                     pbar.set_postfix_str(
-                        f"D(CE)={(disc_ce_this/max(1,d_pass_cnt)):.4f} | "
+                        f"D(CE)={(disc_ce_this/d_pass_cnt):.4f} | "
                         f"G(CE)={gen_ce_this:.4f} | "
                         f"eps={(eps_val if eps_val is not None else 0.0):.4f}/{self.eps_max:g} | "
                         f"buf={len(self.hard_buf)}"
@@ -1051,15 +997,11 @@ class AdvTrainer:
                             self.step + 1,
                             float(disc_ce_this + gen_ce_this),
                             float(gen_ce_this),
-                            float(disc_ce_this / max(1, d_pass_cnt)),
+                            float(disc_ce_this / d_pass_cnt),
                             ("" if eps_val is None else float(eps_val)),
                         ])
 
             if pbar: pbar.close()
-
-    @torch.no_grad()
-    def _save_adv_samples(self, batch: Dict, questions=None):
-        return
 
     def save_ckpt(self, step_tag: str):
         if self.rank != 0: return
