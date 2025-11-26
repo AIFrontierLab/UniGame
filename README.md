@@ -116,7 +116,7 @@ If you find this work useful, please cite:
 ```
 ## Acknowledgements
 
-We thank Dr. Ziyue Xu from NVIDIA for his insightful discussions and valuable comments on this project. We thank the authors of [Janus-Pro](https://github.com/deepseek-ai/Janus), [VQAv2](https://visualqa.org/), and other open-source projects that made this work possible.
+We thank Dr. Ziyue Xu from NVIDIA for his insightful discussions and valuable comments on this project. We thank the authors of [Janus-Pro](https://github.com/deepseek-ai/Janus), and other open-source projects that made this work possible.
 
 ## License
 
