@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="./fig/logo.png" width="40%" alt="AIFrontier Lab" />
-</div>
+
 
 <hr>
 
@@ -33,7 +31,8 @@
 <hr>
 
 
-Official implementation of **UniGame**, a self-adversarial post-training framework for Unified Multimodal Models (UMMs).
+## Please disregard this repo and refer to <a href="https://github.com/AIFrontierLab/TorchUMM">TorchUMM</a> for a more unified implementation of ALL UMMs!
+
 <p align="center">
   <img src="./fig/consistency.jpg" width="32%">
   <img src="./fig/fig-manifold.jpg" width="24%">
